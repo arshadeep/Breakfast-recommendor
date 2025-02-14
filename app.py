@@ -1,7 +1,6 @@
 import streamlit as st
 from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_community.llms import HuggingFaceHub
+from langchain_community.llms import HuggingFaceEndpoint
 from langchain.chains import LLMChain
 import os
 
@@ -20,15 +19,15 @@ def init_llm():
         st.error("Please set the HUGGINGFACE_API_TOKEN environment variable")
         st.stop()
     
-    return HuggingFaceHub(
-        repo_id="gpt2",  # Changed to gpt2 model
+    return HuggingFaceEndpoint(
+        endpoint_url="https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
         huggingfacehub_api_token=hugging_face_token,
+        task="text-generation",
         model_kwargs={
             "temperature": 0.7,
             "max_new_tokens": 256,
-            "do_sample": True
-        },
-        task="text-generation"  # Explicitly specify the task
+            "return_full_text": False
+        }
     )
 
 def main():
@@ -55,17 +54,17 @@ def main():
             step=5
         )
 
-    # Define prompt template with simpler format
-    prompt_template = """Create a simple breakfast recipe using these ingredients: {ingredients}. The recipe should take {time} minutes or less.
+    # Define prompt template
+    prompt_template = """You are a helpful chef. Create a breakfast recipe using only these ingredients: {ingredients}. The recipe must take {time} minutes or less to prepare.
 
-Format:
-Recipe: [name]
-Time: [minutes]
+Recipe format:
+Name: (name of the dish)
+Time: (cooking time in minutes)
 Steps:
-1. [step]
-2. [step]
-3. [step]
-Nutrition: [brief info]"""
+1. (step)
+2. (step)
+3. (step)
+Nutrition: (brief nutritional info)"""
 
     template = PromptTemplate(
         template=prompt_template,
@@ -82,12 +81,12 @@ Nutrition: [brief info]"""
             if ingredients and time > 0:
                 with st.spinner("Creating your breakfast recipe..."):
                     try:
-                        # Simplify the input to just the required fields
-                        response = chain.run(ingredients=ingredients, time=str(time))
+                        # Convert inputs to strings
+                        response = chain.invoke({"ingredients": str(ingredients), "time": str(time)})
                         
                         # Display response in a nice format
                         st.success("Here's your personalized breakfast recipe!")
-                        st.markdown(response)
+                        st.markdown(response['text'])
                     except Exception as e:
                         st.error("Sorry, couldn't generate a recipe at the moment. Please try again.")
                         st.error(f"Error details: {str(e)}")
