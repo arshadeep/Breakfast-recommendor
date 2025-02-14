@@ -20,18 +20,19 @@ def init_llm():
         st.stop()
     
     return HuggingFaceEndpoint(
-        endpoint_url="https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
+        endpoint_url="https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
         huggingfacehub_api_token=hugging_face_token,
         task="text-generation",
         model_kwargs={
             "temperature": 0.7,
-            "max_new_tokens": 256,
+            "max_new_tokens": 512,
+            "top_p": 0.95,
             "return_full_text": False
         }
     )
 
 def main():
-    st.title("🍳 Breakfast Recommendation App")
+    st.title("🍳 Smart Breakfast Recommendation App")
     st.markdown("""
     Get personalized breakfast recommendations based on your available ingredients and time!
     """)
@@ -42,7 +43,7 @@ def main():
     with col1:
         ingredients = st.text_area(
             "What ingredients do you have?",
-            placeholder="e.g., eggs, bread, milk, butter"
+            placeholder="e.g., eggs, bread, butter (separate with commas)"
         )
     
     with col2:
@@ -54,17 +55,48 @@ def main():
             step=5
         )
 
-    # Define prompt template
-    prompt_template = """You are a helpful chef. Create a breakfast recipe using only these ingredients: {ingredients}. The recipe must take {time} minutes or less to prepare.
+    # Define prompt template with nutrition calculation
+    prompt_template = """You are a professional chef and nutritionist specializing in breakfast recipes. Create a recipe using ONLY the ingredients listed below and calculate its nutritional value.
 
-Recipe format:
-Name: (name of the dish)
-Time: (cooking time in minutes)
-Steps:
-1. (step)
-2. (step)
-3. (step)
-Nutrition: (brief nutritional info)"""
+Available ingredients: {ingredients}
+Time limit: {time} minutes
+
+Important rules:
+- Use ONLY the ingredients listed above
+- Do not suggest or mention any additional ingredients
+- Recipe must be completable within the time limit
+- Specify exact quantities for each ingredient
+- Calculate nutritional information based on the specified quantities
+
+Please provide the recipe in this exact format:
+
+Recipe Name: (create a name using only the available ingredients)
+
+Ingredients Used:
+- (list each ingredient with exact measurements)
+
+Instructions:
+1. (step with timing)
+2. (step with timing)
+3. (step with timing)
+
+Total Time: (must be less than or equal to the time limit)
+
+Nutritional Information (per serving):
+- Calories: (calculate based on ingredients and portions)
+- Protein: (in grams)
+- Carbohydrates: (in grams)
+- Fat: (in grams)
+- Fiber: (in grams)
+- Key Vitamins/Minerals: (list main nutrients)
+
+Tips: (optional tips for better results using ONLY the listed ingredients)
+
+Remember: 
+1. Calculate nutrition values based on the EXACT quantities specified in the recipe
+2. Consider standard serving sizes when calculating nutrition
+3. Break down the nutritional calculation if relevant
+4. Stick STRICTLY to the provided ingredients"""
 
     template = PromptTemplate(
         template=prompt_template,
@@ -79,18 +111,21 @@ Nutrition: (brief nutritional info)"""
         # When user clicks "Get Recommendation"
         if st.button("Get Recommendation", type="primary"):
             if ingredients and time > 0:
-                with st.spinner("Creating your breakfast recipe..."):
+                with st.spinner("Creating your personalized breakfast recipe with nutritional analysis..."):
                     try:
-                        # Convert inputs to strings
+                        # Get recipe recommendation with nutrition info
                         response = chain.invoke({"ingredients": str(ingredients), "time": str(time)})
                         
                         # Display response in a nice format
                         st.success("Here's your personalized breakfast recipe!")
-                        st.markdown(response['text'])
+                        
+                        # Recipe card
+                        with st.container():
+                            st.markdown(response['text'])
+                            
                     except Exception as e:
                         st.error("Sorry, couldn't generate a recipe at the moment. Please try again.")
                         st.error(f"Error details: {str(e)}")
-                        st.info("If the error persists, try refreshing the page or using different ingredients.")
             else:
                 st.warning("Please provide both ingredients and time.")
 
@@ -102,9 +137,9 @@ Nutrition: (brief nutritional info)"""
     st.markdown("---")
     st.markdown(
         """
-        Made with ❤️ using Streamlit and HuggingFace
+        Made with ❤️ using Streamlit and Mixtral-8x7B
         
-        *Note: Please verify ingredients and cooking times for food safety.*
+        *Note: Please verify ingredients, cooking times, and nutritional information for food safety.*
         """
     )
 
