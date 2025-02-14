@@ -21,14 +21,14 @@ def init_llm():
         st.stop()
     
     return HuggingFaceHub(
-        repo_id="facebook/opt-1.3b",  # Changed to a more reliable model
+        repo_id="gpt2",  # Changed to gpt2 model
         huggingfacehub_api_token=hugging_face_token,
         model_kwargs={
             "temperature": 0.7,
-            "max_new_tokens": 512,
-            "top_p": 0.9,
-            "repetition_penalty": 1.1
-        }
+            "max_new_tokens": 256,
+            "do_sample": True
+        },
+        task="text-generation"  # Explicitly specify the task
     )
 
 def main():
@@ -55,17 +55,17 @@ def main():
             step=5
         )
 
-    # Define prompt template
-    prompt_template = """Create a breakfast recipe using these ingredients: {ingredients}. The recipe must take {time} minutes or less to prepare.
+    # Define prompt template with simpler format
+    prompt_template = """Create a simple breakfast recipe using these ingredients: {ingredients}. The recipe should take {time} minutes or less.
 
-Please format the response exactly like this:
-Recipe Name: [short descriptive name]
-Ingredients Needed: [list only the ingredients that were provided]
-Steps to Prepare: [numbered steps, be concise]
-Approximate Calories: [estimate]
-Nutritional Highlights: [brief nutritional benefits]
-
-Keep the recipe simple and practical."""
+Format:
+Recipe: [name]
+Time: [minutes]
+Steps:
+1. [step]
+2. [step]
+3. [step]
+Nutrition: [brief info]"""
 
     template = PromptTemplate(
         template=prompt_template,
@@ -82,7 +82,8 @@ Keep the recipe simple and practical."""
             if ingredients and time > 0:
                 with st.spinner("Creating your breakfast recipe..."):
                     try:
-                        response = chain.run(ingredients=ingredients, time=time)
+                        # Simplify the input to just the required fields
+                        response = chain.run(ingredients=ingredients, time=str(time))
                         
                         # Display response in a nice format
                         st.success("Here's your personalized breakfast recipe!")
@@ -90,6 +91,7 @@ Keep the recipe simple and practical."""
                     except Exception as e:
                         st.error("Sorry, couldn't generate a recipe at the moment. Please try again.")
                         st.error(f"Error details: {str(e)}")
+                        st.info("If the error persists, try refreshing the page or using different ingredients.")
             else:
                 st.warning("Please provide both ingredients and time.")
 
