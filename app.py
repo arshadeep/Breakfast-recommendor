@@ -137,7 +137,6 @@ Remember:
     st.markdown("---")
     st.markdown(
         """
-        Made with ❤️ using Streamlit and Mixtral-8x7B
         
         *Note: Please verify ingredients, cooking times, and nutritional information for food safety.*
         """
