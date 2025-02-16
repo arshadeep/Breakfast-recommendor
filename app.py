@@ -102,9 +102,7 @@ def init_llm():
     
     return HuggingFaceEndpoint(
         endpoint_url="https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
-        huggingfacehub_api_token=hugging_face_token,
-        task="text-generation",
-        return_full_text=False
+        huggingfacehub_api_token=hugging_face_token
     )
 
 # ---- 3. MAIN APP ----
