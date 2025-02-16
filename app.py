@@ -105,7 +105,6 @@ def init_llm():
         huggingfacehub_api_token=hugging_face_token,
         task="text-generation",
         temperature=0.7,
-        max_new_tokens=512,
         top_p=0.95,
         return_full_text=False
     )
